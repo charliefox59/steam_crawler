@@ -36,6 +36,7 @@ class steam_crawler():
             '''
             return requests.get(self.url, params = params).json()
 
+
     def write_json(self, data : list[dict], filename : str) -> None:
         '''
         Write the formatted data to a .json file in "steam_crawler/output" folder
@@ -94,10 +95,10 @@ class steam_crawler():
                 })
         sorted_output = sorted(output, key=lambda x: (datetime.strptime(x['date'], '%Y-%m-%d'),x["id"]), reverse=True)
 
-        if self.date_interval is not None: 
-            return self.filter_dates(sorted_output)
-        else: 
-            return sorted_output
+        # if self.date_interval is not None: #TODO: CHANGE THIS TO FILTER BEFORE FORMATTING.
+        #     return self.filter_dates(sorted_output)
+        # else: 
+        return sorted_output
     
     def filter_dates(self, data: list[dict]) -> list[dict]:
         '''
@@ -108,10 +109,7 @@ class steam_crawler():
         start_date, end_date = date.fromisoformat(self.date_interval[0]), date.fromisoformat(self.date_interval[1])
         return [review for review in data if start_date <= date.fromisoformat(review["date"]) <= end_date]
 
-
-    
-        
-    def process_batch(self, batch_size : int) -> list[dict]:
+    def process_batch(self, batch_size : int = 5000) -> list[dict]:
         raw_review_data = []
         review_count = 0
         
@@ -138,7 +136,7 @@ class steam_crawler():
         Return a list of n dictionaries for n reviews
         '''
         self.params["cursor"] = "*"
-        total_reviews = self.get_reviews(params)["query_summary"]["total_reviews"] 
+        total_reviews = self.get_reviews(self.params)["query_summary"]["total_reviews"] 
         batch_sizes = [batch for batch in range(self.batch_size, total_reviews, self.batch_size)] + [total_reviews % self.batch_size]
         batch_count = 0
         for batch_size in batch_sizes:
@@ -149,17 +147,17 @@ class steam_crawler():
                             f"{self.game_name}_{batch_count}")
 
         
-crawler = steam_crawler(app_id = 1382330,
-              game_name = "Persona_5_Strikers",
-              franchise_name = "ATLUS",
-              batch_size = 5000)
-              #date_interval=("2022-01-01","2023-01-01"))
+# crawler = steam_crawler(app_id = 1382330,
+#               game_name = "Persona_5_Strikers",
+#               franchise_name = "ATLUS",
+#               batch_size = 5000)
+#               #date_interval=("2022-01-01","2023-01-01"))
 
-params = {
-            'json' : 1,
-            'day_range' : 9223372036854775807,
-            'cursor' : '*',
-            'num_per_page' : 100
-            }
+# params = {
+#             'json' : 1,
+#             'day_range' : 9223372036854775807,
+#             'cursor' : '*',
+#             'num_per_page' : 100
+#             }
 
-response = crawler.get_all_reviews()
+#response = crawler.get_reviews()
