@@ -84,7 +84,7 @@ class test_crawler(unittest.TestCase):
         data_mock = MagicMock(dict)
         filename_mock = MagicMock(str)
 
-        folder_mock = f"crawler/output/{self.uut.game_name}"
+        folder_mock = f"crawler/output/{self.uut.game_name}/all"
 
         self.uut.write_json(data_mock,filename_mock)
         
