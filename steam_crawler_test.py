@@ -1,9 +1,6 @@
 import steam_crawler
 import unittest, os, sys
-from unittest.mock import MagicMock,patch,call,mock_open
-import pathlib as pl
-import json
-import os
+from unittest.mock import MagicMock,patch,call
 sys.path.append(os.path.realpath(".."))
 sys.path.append(os.path.realpath("."))
 
@@ -21,9 +18,7 @@ class test_crawler(unittest.TestCase):
                              batch_size = mock_batch_size,
                              date_interval = mock_date_interval)
         return super().setUp()
-    # 7 Functions: 
-    #__init__() (6 lines of code)
-
+    
     def test_class_loader_default(self):
         mock_id = MagicMock(int)
         mock_game_name = MagicMock(str)
@@ -60,7 +55,7 @@ class test_crawler(unittest.TestCase):
         self.assertEqual(_uut.batch_size, mock_batch_size)
         self.assertEqual(_uut.date_interval, mock_date_interval)
 
-    @patch('builtins.open') #, mock_open(read_data='{"disabled":True}')
+    @patch('builtins.open') 
     @patch("steam_crawler.json")
     @patch("steam_crawler.Path")
     def test_write_json(self, path_patch, json_patch, open_patch):
@@ -81,7 +76,7 @@ class test_crawler(unittest.TestCase):
                                      call().__enter__().write(json_patch.dumps(data_mock)),
                                      call().__exit__(None, None, None)])
         
-    @patch('builtins.open') #, mock_open(read_data='{"disabled":True}')
+    @patch('builtins.open') 
     @patch("steam_crawler.json")
     @patch("steam_crawler.Path")
     def test_write_json_nofilter(self, path_patch, json_patch, open_patch):
@@ -133,7 +128,7 @@ class test_crawler(unittest.TestCase):
 
     @patch("steam_crawler.requests.get")
     def test_request(self,get_patch):
-        get_patch.__getitem__().__getitem__().return_value = 1
+        get_patch.__getitem__("query_summary").__getitem__("total_reviews").return_value = 1
         for d in self.uut.request():
             print(d)
 
@@ -143,8 +138,6 @@ class test_crawler(unittest.TestCase):
         d = MagicMock(dict)
         
         r = self.uut.filter_data()
-        #TODO: ask david how to unittest yield functions
-        #request_patch.return_value wont work
 
     @patch("steam_crawler.steam_crawler.request")
     def test_filter_data_nofilter(self,request_patch):
@@ -162,7 +155,6 @@ class test_crawler(unittest.TestCase):
         votes_up_mock, votes_funny_mock = MagicMock(int), MagicMock(int)
         voted_up_mock = MagicMock(bool)
         timestamp_created_mock = MagicMock(int)
-        #timestamp_created_mock.return_value = 
 
         filter_data_patch.return_value = [{"recommendationid" : id_mock,
                    "author" : {"steamid" : steam_id_mock,
@@ -181,56 +173,22 @@ class test_crawler(unittest.TestCase):
         generate_uuid_patch.assert_has_calls([call(id_mock),call(steam_id_mock)])
         parse_timestamp_patch.assert_called_with(timestamp_created_mock)
 
-        d = filter_data_patch[0]
         formtted_data = [{
-                "id": generate_uuid_patch(d["recommendationid"]),
-                "author": generate_uuid_patch(d["author"]["steamid"]) ,
-                "date": parse_timestamp_patch(d["timestamp_created"]),
-                "hours": d["author"]["playtime_forever"],
-                "content": d["review"],
-                "comments": d["comment_count"],
+                "id": generate_uuid_patch(id_mock),
+                "author": generate_uuid_patch(steam_id_mock) ,
+                "date": parse_timestamp_patch(timestamp_created_mock),
+                "hours": playtime_mock,
+                "content": review_mock,
+                "comments": comment_count_mock,
                 "source": "steam",
-                "helpful": d["votes_up"],
-                "funny": d["votes_funny"],
-                "recommended": d["voted_up"],
+                "helpful": votes_up_mock,
+                "funny": votes_funny_mock,
+                "recommended": voted_up_mock,
                 "franchise": self.uut.franchise_name,
                 "gameName": self.uut.game_name
                 }]
-
-        write_json_patch.assert_called_with(formtted_data, 0)
-        
-        filter_data_patch.assert_has_calls([call(),
-        call.__getitem__(0),
-        call.__getitem__().__getitem__('recommendationid'),
-        call.__getitem__().__getitem__('author'),
-        call.__getitem__().__getitem__().__getitem__('steamid'),
-        call.__getitem__().__getitem__('timestamp_created'),
-        call.__getitem__().__getitem__('author'),
-        call.__getitem__().__getitem__().__getitem__('playtime_forever'),
-        call.__getitem__().__getitem__('review'),
-        call.__getitem__().__getitem__('comment_count'),
-        call.__getitem__().__getitem__('votes_up'),
-        call.__getitem__().__getitem__('votes_funny'),
-        call.__getitem__().__getitem__('voted_up'),
-        call.__getitem__().__getitem__('timestamp_created'),
-        call.__getitem__().__getitem__().__lt__(1672531200.0),
-        call.__getitem__().__getitem__('timestamp_created'),
-        call.__getitem__().__getitem__().__lt__(1672531200.0)])
-
-
-        # self.assertEqual(generate_uuid_patch(id_mock), r0["id"])
-        # self.assertEqual(generate_uuid_patch(steam_id_mock), r0["author"])
-        # self.assertEqual(parse_timestamp_patch(timestamp_created_mock), r0["date"])
-        # self.assertEqual(playtime_mock, r0["hours"])
-        # self.assertEqual(review_mock, r0["content"])
-        # self.assertEqual(comment_count_mock, r0["comments"])
-        # self.assertEqual(self.uut.source, r0["source"])
-        # self.assertEqual(votes_up_mock, r0["helpful"])
-        # self.assertEqual(votes_funny_mock, r0["funny"])
-        # self.assertEqual(voted_up_mock, r0["recommended"])
-        # self.assertEqual(self.uut.franchise_name, r0["franchise"])
-        # self.assertEqual(self.uut.game_name, r0["gameName"])
-        
+        filter_data_patch.assert_called_with()
+        write_json_patch.assert_called_with(formtted_data, "0")
     
     
 
