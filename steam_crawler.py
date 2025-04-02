@@ -151,8 +151,8 @@ if __name__ == "__main__": #pragma: no-cover
     crawler = steam_crawler(app_id = 1382330,
                 game_name = "Persona_5_Strikers",
                 franchise_name = "ATLUS",
-                batch_size = 5000,
-                date_interval=("2022-01-01","2023-01-01"))
+                batch_size = 5000)
+                #date_interval=("2022-01-01","2023-01-01"))
 
     out = crawler.format_data()
 
