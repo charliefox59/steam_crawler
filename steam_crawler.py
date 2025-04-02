@@ -10,9 +10,9 @@ from typing import Optional, Union
 class steam_crawler():
     
     def __init__(self, app_id: int, game_name: str, franchise_name : str, batch_size: int,
-                 date_interval: Optional[tuple[str, str]]) -> None:
+                 date_interval: Optional[tuple[str, str]] = None) -> None:
         '''
-        Initialise variables used across multiple functions. 
+        Initialise variables used across multiple functions.
 
         Generate base url for get_reviews
 
@@ -26,9 +26,11 @@ class steam_crawler():
 
     def write_json(self, data : list[dict[str, Union[str, int, bool]]], filename : str) -> None:
         '''
-        Make file directory for new games.
+        Make file directory for new games
 
         Write the formatted data to a .json file in "steam_crawler/output/game_name" folder
+
+        Add date interval to folder name if applicable
         '''
         if self.date_interval is None: 
             folder = f"crawler/output/{self.game_name}"
@@ -44,11 +46,11 @@ class steam_crawler():
 
     def generate_uuid(self, base_id: str) -> str:
         '''
-        Input string (base_id), use uuid5 to return a UUID.
+        Input string (base_id), use uuid5 to return a UUID
         
-            UUID is reproducable if you input the same string. 
+            UUID is reproducable if you input the same string
 
-            Choose DNS namespace for generating UUIDs.
+            Choose DNS namespace for generating UUIDs
 
         Return UUID string
         '''
@@ -63,9 +65,19 @@ class steam_crawler():
         return str(datetime.fromtimestamp(timestamp).date())
         
     def to_timestamp(self, date : str) -> datetime.timestamp:
+         '''
+        Input date string in "YYYY-MM-DD" format
+        
+        Return a date timestamp for filtering dates
+        '''
          return datetime.timestamp(datetime.strptime(date,'%Y-%m-%d'))
     
     def request(self):
+        ''' 
+        Loop through requests of all steam reviews for a specific game
+
+        Yield individual review dictionaries
+        '''
         url = f"https://store.steampowered.com/appreviews/{self.app_id}"
         params = {
         'json' : 1,
@@ -90,6 +102,13 @@ class steam_crawler():
             r = requests.get(url, params).json()
 
     def filter_data(self): 
+        '''
+        Input yield from request()
+
+        If no date_interval exists, yield all reviews
+
+        Else (date_interval exists), yield reviews within the interval 
+        '''
         for d in self.request():
             if self.date_interval is None:
                 yield d 
@@ -97,6 +116,13 @@ class steam_crawler():
                 yield d
 
     def format_data(self):
+        '''
+        Loop through filtered data
+
+        Format the data and append it to output
+
+        Write output to json file every 5000 reviews and then at the end
+        '''
         out = []
         batch_number = 0
         for d in self.filter_data():
@@ -121,11 +147,12 @@ class steam_crawler():
 
         self.write_json(out, str(batch_number))
 
-crawler = steam_crawler(app_id = 1382330,
-              game_name = "Persona_5_Strikers",
-              franchise_name = "ATLUS",
-              batch_size = 5000,
-              date_interval=("2022-01-01","2023-01-01"))
+if __name__ == "__main__": #pragma: no-cover
+    crawler = steam_crawler(app_id = 1382330,
+                game_name = "Persona_5_Strikers",
+                franchise_name = "ATLUS",
+                batch_size = 5000,
+                date_interval=("2022-01-01","2023-01-01"))
 
-out = crawler.format_data()
+    out = crawler.format_data()
 
