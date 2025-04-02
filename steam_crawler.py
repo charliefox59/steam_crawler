@@ -3,7 +3,6 @@ import requests
 import json
 from datetime import datetime
 import uuid
-from datetime import date
 from pathlib import Path
 from typing import Optional, Union
 
