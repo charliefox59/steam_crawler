@@ -33,7 +33,7 @@ class steam_crawler():
         Add date interval to folder name if applicable
         '''
         if self.date_interval is None: 
-            folder = f"crawler/output/{self.game_name}"
+            folder = f"crawler/output/{self.game_name}/all"
             Path(folder).mkdir(parents=True, exist_ok=True)
             path = f"{folder}/{filename}.json"
         else: 
