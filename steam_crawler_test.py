@@ -136,39 +136,66 @@ class test_crawler(unittest.TestCase):
         r = self.uut.request()
         _r = r.__next__()
         self.assertEqual(_r, review_mock1)
+        
+
+        #ADD FIRST ITER CHECKS
+
 
         _r = r.__next__()
         self.assertEqual(_r, review_mock2)
-        #get_patch().json().__getitem__()
+
+
+        #ADD NEXT ITER CHECKS
+
+
         self.assertRaises(StopIteration, r.__next__, )
 
     @patch("steam_crawler.steam_crawler.to_timestamp")
     @patch("steam_crawler.steam_crawler.request")
     def test_filter_data(self,request_patch,to_timestamp_mock):
-        review_mock1, review_mock2 = MagicMock(dict), MagicMock(dict)
-        request_patch().__iter__.return_value = [review_mock1, review_mock2]
+        review_mock= MagicMock(dict)
+        request_patch().__iter__.return_value = [review_mock]
+        request_patch.reset_mock()
 
-
-        review_mock1.__getitem__().__gt__.return_value= True
-        review_mock1.__getitem__().__le__.return_value= True
+        review_mock.__getitem__().__gt__.return_value= True
+        review_mock.__getitem__().__le__.return_value= True
         r = self.uut.filter_data()
         _r = r.__next__()
 
-        self.assertEqual(_r, review_mock1)
+        self.assertEqual(_r, review_mock)
         
         to_timestamp_mock.assert_has_calls(
             [call(self.uut.date_interval.__getitem__(0)),
-             call().__lt__(review_mock1.__getitem__(0)),
+             call().__lt__(review_mock.__getitem__(0)),
              call(self.uut.date_interval.__getitem__(1))])
-        request_patch.assert_has_calls(
-            [call(), call(),call().__iter__()])
-                                        
         
+        request_patch.assert_has_calls(
+            [call(),call().__iter__()])
+
+        review_mock.assert_has_calls(
+            [call.__getitem__('timestamp_created'),
+             call.__getitem__().__gt__(to_timestamp_mock(self.uut.date_interval.__getitem__(0))),
+             call.__getitem__().__le__(to_timestamp_mock(self.uut.date_interval.__getitem__(1)))])
+        
+        self.assertRaises(StopIteration, r.__next__, )                    
         
     @patch("steam_crawler.steam_crawler.request")
     def test_filter_data_nofilter(self,request_patch):
-        self.assertEqual(list(self.uut.filter_data()), request_patch)
+        self.uut.date_interval = None
+        review_mock= MagicMock(dict)
 
+        request_patch().__iter__.return_value = [review_mock]
+        request_patch.reset_mock()
+
+        r = self.uut.filter_data()
+        _r = r.__next__()
+
+        request_patch.assert_has_calls(
+            [call(),call().__iter__()])
+
+        self.assertEqual(_r, review_mock)
+
+        self.assertRaises(StopIteration, r.__next__, )
 
     @patch("steam_crawler.steam_crawler.write_json")
     @patch("steam_crawler.steam_crawler.filter_data")
