@@ -1,14 +1,14 @@
 
 import requests
 import json
-from datetime import datetime
-import uuid
+import utils
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, Generator
 
-class steam_crawler():
+class SteamCrawler():
     
-    def __init__(self, app_id: int, game_name: str, franchise_name : str, batch_size: int,
+    def __init__(self, app_id: int, game_name: str, 
+                 franchise_name: str, batch_size: int = 5000, 
                  date_interval: Optional[tuple[str, str]] = None) -> None:
         '''
         Initialise variables used across multiple functions.
@@ -17,13 +17,13 @@ class steam_crawler():
 
         Add option to initialise date_interval to filter the reviews (2 dates in DD-MM-YYYY format)
         '''
-        self.app_id = app_id
-        self.game_name = game_name
-        self.franchise_name = franchise_name
-        self.batch_size = batch_size
-        self.date_interval = date_interval
+        self.app_id: int = app_id
+        self.game_name: str = game_name
+        self.franchise_name: str = franchise_name
+        self.batch_size: int = batch_size
+        self.date_interval: Optional[tuple[str, str]] = date_interval
 
-    def write_json(self, data : list[dict[str, Union[str, int, bool]]], filename : str) -> None:
+    def write_json(self, data: list[dict[str, Union[str, int, bool]]], filename: str) -> None:
         '''
         Make file directory for new games
 
@@ -43,35 +43,9 @@ class steam_crawler():
         with open(path, "w") as f:
             f.write(json.dumps(data))
 
-    def generate_uuid(self, base_id: str) -> str:
-        '''
-        Input string (base_id), use uuid5 to return a UUID
-        
-            UUID is reproducable if you input the same string
 
-            Choose DNS namespace for generating UUIDs
-
-        Return UUID string
-        '''
-        return uuid.uuid5(uuid.NAMESPACE_DNS, base_id).hex
-
-    def parse_timestamp(self, timestamp: int) -> str:
-        '''
-        Input timestamp from steam data and 
-        
-        Return a date string in "YYYY-MM-DD format"
-        '''
-        return str(datetime.fromtimestamp(timestamp).date())
-        
-    def to_timestamp(self, date : str) -> datetime.timestamp:
-         '''
-        Input date string in "YYYY-MM-DD" format
-        
-        Return a date timestamp for filtering dates
-        '''
-         return datetime.timestamp(datetime.strptime(date,'%Y-%m-%d'))
     
-    def request(self):
+    def generate_reviews(self) -> Generator[dict[str, Union[str, int, bool]], None, None]:
         ''' 
         Loop through requests of all steam reviews for a specific game
 
@@ -100,7 +74,7 @@ class steam_crawler():
             params["cursor"] = r["cursor"]
             r = requests.get(url, params).json()
 
-    def filter_data(self): 
+    def filter_data(self) -> Generator[dict[str, Union[str, int, bool]], None, None]:
         '''
         Input yield from request()
 
@@ -108,13 +82,32 @@ class steam_crawler():
 
         Else (date_interval exists), yield reviews within the interval 
         '''
-        for d in self.request():
+        for d in self.generate_reviews():
             if self.date_interval is None:
                 yield d 
-            elif self.to_timestamp(self.date_interval[0]) < d["timestamp_created"] <= self.to_timestamp(self.date_interval[1]):
+            elif utils.to_timestamp(self.date_interval[0]) < d["timestamp_created"] <= utils.to_timestamp(self.date_interval[1]):
                 yield d
 
-    def format_data(self):
+    def format_data(self, d: dict[str, Union[str, int, bool]]) -> dict[str, Union[str, int, bool]]:
+        '''
+        Input steam api data 
+
+        Return data in preferred format
+        '''
+        return {"id": utils.generate_uuid(d["recommendationid"]),
+                "author": utils.generate_uuid(d["author"]["steamid"]) ,
+                "date": utils.parse_timestamp(d["timestamp_created"]),
+                "hours": d["author"]["playtime_forever"],
+                "content": d["review"],
+                "comments": d["comment_count"],
+                "source": "steam",
+                "helpful": d["votes_up"],
+                "funny": d["votes_funny"],
+                "recommended": d["voted_up"],
+                "franchise": self.franchise_name,
+                "gameName": self.game_name}
+    
+    def crawl(self, num_batches: Optional[int] = None) -> None:
         '''
         Loop through filtered data
 
@@ -125,33 +118,22 @@ class steam_crawler():
         out = []
         batch_number = 0
         for d in self.filter_data():
-                out.append({
-                "id": self.generate_uuid(d["recommendationid"]),
-                "author": self.generate_uuid(d["author"]["steamid"]) ,
-                "date": self.parse_timestamp(d["timestamp_created"]),
-                "hours": d["author"]["playtime_forever"],
-                "content": d["review"],
-                "comments": d["comment_count"],
-                "source": "steam",
-                "helpful": d["votes_up"],
-                "funny": d["votes_funny"],
-                "recommended": d["voted_up"],
-                "franchise": self.franchise_name,
-                "gameName": self.game_name
-                })
-                if len(out) == 5000:
+                out.append(self.format_data(d))
+                if len(out) == self.batch_size:
                     self.write_json(out, str(batch_number))
                     batch_number += 1
+                    if batch_number == num_batches: 
+                        break
                     out = []
-
-        self.write_json(out, str(batch_number))
+        if out:
+            self.write_json(out, str(batch_number))
 
 if __name__ == "__main__":
-    crawler = steam_crawler(app_id = 1382330,
+    crawler = SteamCrawler(app_id = 1382330,
                 game_name = "Persona_5_Strikers",
                 franchise_name = "ATLUS",
                 batch_size = 5000)
                 #date_interval=("2022-01-01","2023-01-01"))
 
-    out = crawler.format_data()
+    out = crawler.crawl()
 
