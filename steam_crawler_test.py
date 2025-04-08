@@ -133,15 +133,11 @@ class test_crawler(unittest.TestCase):
         review_mock1, review_mock2 = MagicMock(dict), MagicMock(dict)
         get_patch().json().__getitem__().__getitem__().__gt__.side_effect = [True, False]
         get_patch().json().__getitem__().__iter__.return_value = [review_mock1, review_mock2]
+        get_patch.reset_mock()
         r = self.uut.request()
         _r = r.__next__()
         
         get_patch().json.assert_has_calls([
-            call().__getitem__(),
-            call().__getitem__().__getitem__(), 
-            call(), 
-            call().__getitem__(),
-            call(),
             call().__getitem__('query_summary'),
             call().__getitem__().__getitem__('total_reviews'),
             call().__getitem__().__getitem__().__gt__(0),
@@ -230,14 +226,14 @@ class test_crawler(unittest.TestCase):
                    "votes_up" : votes_up_mock,
                    "votes_funny" : votes_funny_mock,
                    "voted_up" : voted_up_mock
-                   }]
-        
+                   }] * 5001
+
         r = self.uut.format_data()
         
         generate_uuid_patch.assert_has_calls([call(id_mock),call(steam_id_mock)])
         parse_timestamp_patch.assert_called_with(timestamp_created_mock)
 
-        formtted_data = [{
+        formatted_data = [{
                 "id": generate_uuid_patch(id_mock),
                 "author": generate_uuid_patch(steam_id_mock) ,
                 "date": parse_timestamp_patch(timestamp_created_mock),
@@ -252,8 +248,9 @@ class test_crawler(unittest.TestCase):
                 "gameName": self.uut.game_name
                 }]
         filter_data_patch.assert_called_with()
-        write_json_patch.assert_called_with(formtted_data, "0")
-    
+        write_json_patch.assert_has_calls([call(formatted_data * 5000,"0")],
+                                          [call(formatted_data,"1")])
+        
     
 
     
