@@ -135,20 +135,31 @@ class test_crawler(unittest.TestCase):
         get_patch().json().__getitem__().__iter__.return_value = [review_mock1, review_mock2]
         r = self.uut.request()
         _r = r.__next__()
-        self.assertEqual(_r, review_mock1)
         
-
-        #ADD FIRST ITER CHECKS
-
+        get_patch().json.assert_has_calls([
+            call().__getitem__(),
+            call().__getitem__().__getitem__(), 
+            call(), 
+            call().__getitem__(),
+            call(),
+            call().__getitem__('query_summary'),
+            call().__getitem__().__getitem__('total_reviews'),
+            call().__getitem__().__getitem__().__gt__(0),
+            call().__getitem__('reviews'),
+            call().__getitem__().__iter__()])
+        
+        self.assertEqual(_r, review_mock1)
 
         _r = r.__next__()
+
         self.assertEqual(_r, review_mock2)
 
-
-        #ADD NEXT ITER CHECKS
-
-
         self.assertRaises(StopIteration, r.__next__, )
+
+        get_patch().json.assert_has_calls([
+            call().__getitem__('reviews'),
+            call().__getitem__().__len__(),
+            call().__getitem__('cursor')])
 
     @patch("steam_crawler.steam_crawler.to_timestamp")
     @patch("steam_crawler.steam_crawler.request")
