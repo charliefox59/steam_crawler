@@ -146,7 +146,7 @@ class steam_crawler():
 
         self.write_json(out, str(batch_number))
 
-if __name__ == "__main__": #pragma: no-cover
+if __name__ == "__main__":
     crawler = steam_crawler(app_id = 1382330,
                 game_name = "Persona_5_Strikers",
                 franchise_name = "ATLUS",
