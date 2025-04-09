@@ -1,6 +1,6 @@
 import steam_crawler, utils
 import unittest, os, sys
-from unittest.mock import MagicMock,patch,call
+from unittest.mock import MagicMock, patch, call
 sys.path.append(os.path.realpath(".."))
 sys.path.append(os.path.realpath("."))
 
@@ -72,10 +72,12 @@ class TestCrawler(unittest.TestCase):
 
         json_patch.dumps.assert_called_with(data_mock)
 
-        open_patch.assert_has_calls([call(f"{folder_mock}/{filename_mock}.json","w"),
-                                    call().__enter__(),
-                                     call().__enter__().write(json_patch.dumps(data_mock)),
-                                     call().__exit__(None, None, None)])
+        open_patch.assert_has_calls([
+            call(f"{folder_mock}/{filename_mock}.json","w"),
+            call().__enter__(),
+            call().__enter__().write(json_patch.dumps(data_mock)),
+            call().__exit__(None, None, None)
+            ])
         
     @patch('builtins.open') 
     @patch("steam_crawler.json")
@@ -94,10 +96,12 @@ class TestCrawler(unittest.TestCase):
 
         json_patch.dumps.assert_called_with(data_mock)
 
-        open_patch.assert_has_calls([call(f"{folder_mock}/{filename_mock}.json","w"),
-                                    call().__enter__(),
-                                     call().__enter__().write(json_patch.dumps(data_mock)),
-                                     call().__exit__(None, None, None)])
+        open_patch.assert_has_calls([
+            call(f"{folder_mock}/{filename_mock}.json","w"),
+            call().__enter__(),
+            call().__enter__().write(json_patch.dumps(data_mock)),
+            call().__exit__(None, None, None)
+            ])
 
     @patch("steam_crawler.requests.get")
     def test_generate_reviews(self,get_patch):
@@ -113,7 +117,8 @@ class TestCrawler(unittest.TestCase):
             call().__getitem__().__getitem__('total_reviews'),
             call().__getitem__().__getitem__().__gt__(0),
             call().__getitem__('reviews'),
-            call().__getitem__().__iter__()])
+            call().__getitem__().__iter__()
+            ])
         
         self.assertEqual(_r, review_mock1)
 
@@ -126,7 +131,8 @@ class TestCrawler(unittest.TestCase):
         get_patch().json.assert_has_calls([
             call().__getitem__('reviews'),
             call().__getitem__().__len__(),
-            call().__getitem__('cursor')])
+            call().__getitem__('cursor')
+            ])
 
     @patch("utils.to_timestamp")
     @patch("steam_crawler.SteamCrawler.generate_reviews")
@@ -142,18 +148,22 @@ class TestCrawler(unittest.TestCase):
 
         self.assertEqual(_r, review_mock)
         
-        to_timestamp_mock.assert_has_calls(
-            [call(self.uut.date_interval.__getitem__(0)),
-             call().__lt__(review_mock.__getitem__(0)),
-             call(self.uut.date_interval.__getitem__(1))])
+        to_timestamp_mock.assert_has_calls([
+            call(self.uut.date_interval.__getitem__(0)),
+            call().__lt__(review_mock.__getitem__(0)),
+            call(self.uut.date_interval.__getitem__(1))
+            ])
         
-        generate_reviews_patch.assert_has_calls(
-            [call(),call().__iter__()])
+        generate_reviews_patch.assert_has_calls([
+            call(),
+            call().__iter__()
+            ])
 
-        review_mock.assert_has_calls(
-            [call.__getitem__('timestamp_created'),
-             call.__getitem__().__gt__(to_timestamp_mock(self.uut.date_interval.__getitem__(0))),
-             call.__getitem__().__le__(to_timestamp_mock(self.uut.date_interval.__getitem__(1)))])
+        review_mock.assert_has_calls([
+            call.__getitem__('timestamp_created'),
+            call.__getitem__().__gt__(to_timestamp_mock(self.uut.date_interval.__getitem__(0))),
+            call.__getitem__().__le__(to_timestamp_mock(self.uut.date_interval.__getitem__(1)))
+            ])
         
         self.assertRaises(StopIteration, r.__next__, )                    
         
@@ -168,8 +178,10 @@ class TestCrawler(unittest.TestCase):
         r = self.uut.filter_data()
         _r = r.__next__()
 
-        generate_reviews_patch.assert_has_calls(
-            [call(),call().__iter__()])
+        generate_reviews_patch.assert_has_calls([
+            call(),
+            call().__iter__()
+            ])
 
         self.assertEqual(_r, review_mock)
 
@@ -211,24 +223,27 @@ class TestCrawler(unittest.TestCase):
                     "recommended": voted_up_mock,
                     "franchise": self.uut.franchise_name,
                     "gameName": self.uut.game_name}
+        
         self.assertEqual(r, formatted_data)
         
     @patch("steam_crawler.SteamCrawler.write_json")
     @patch("steam_crawler.SteamCrawler.filter_data")
     @patch("steam_crawler.SteamCrawler.format_data")
     def test_crawl_all(self, format_data_patch, filter_data_patch, write_json_patch):
-        self.uut.batch_size = 1
+        self.uut.batch_size = 2
 
         self.uut.date_interval.reset_mock()
-        filter_data_patch.return_value = [format_data_patch] * 2
+        filter_data_patch.return_value = [format_data_patch] * 3
         
         r = self.uut.crawl()
         
-        format_data_patch.assert_has_calls([call(format_data_patch)]*2)
+        format_data_patch.assert_has_calls([call(format_data_patch)]*3)
         filter_data_patch.assert_called_with()
 
-        write_json_patch.assert_has_calls([call([format_data_patch()],"0")],
-                                         [call([format_data_patch()],"1")])
+        write_json_patch.assert_has_calls([
+            call([format_data_patch()]*2,"0"),
+            call([format_data_patch()],"1")
+            ])
         
     @patch("steam_crawler.SteamCrawler.write_json")
     @patch("steam_crawler.SteamCrawler.filter_data")
@@ -245,7 +260,6 @@ class TestCrawler(unittest.TestCase):
         filter_data_patch.assert_called_with()
 
         write_json_patch.assert_has_calls([call([format_data_patch()],"0")])
-
 
 class TestUtils(unittest.TestCase):
     @patch("utils.uuid")
@@ -272,7 +286,9 @@ class TestUtils(unittest.TestCase):
         date_mock = MagicMock(str)
         r = utils.to_timestamp(date_mock)
 
-        datetime_patch.assert_has_calls([call.strptime(date_mock,'%Y-%m-%d'),
-                                         call.timestamp(datetime_patch.strptime(date_mock,'%Y-%m-%d'))])
+        datetime_patch.assert_has_calls([
+            call.strptime(date_mock,'%Y-%m-%d'),
+            call.timestamp(datetime_patch.strptime(date_mock,'%Y-%m-%d'))
+            ])
         
         self.assertEqual(r, datetime_patch.timestamp(datetime_patch.strptime(date_mock,'%Y-%m-%d')))
