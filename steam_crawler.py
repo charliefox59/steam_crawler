@@ -3,10 +3,16 @@ import requests
 import json
 import utils
 from pathlib import Path
-from typing import Optional, Union, Generator
+from typing import Optional, Union
+from collections.abc import Generator
 
 class SteamCrawler():
-    
+    app_id: int 
+    game_name: str
+    franchise_name: str
+    batch_size: int
+    date_interval: Optional[tuple[str, str]]
+
     def __init__(self, app_id: int, game_name: str, 
                  franchise_name: str, batch_size: int = 5000, 
                  date_interval: Optional[tuple[str, str]] = None) -> None:
@@ -17,11 +23,11 @@ class SteamCrawler():
 
         Add option to initialise date_interval to filter the reviews (2 dates in DD-MM-YYYY format)
         '''
-        self.app_id: int = app_id
-        self.game_name: str = game_name
-        self.franchise_name: str = franchise_name
-        self.batch_size: int = batch_size
-        self.date_interval: Optional[tuple[str, str]] = date_interval
+        self.app_id = app_id
+        self.game_name = game_name
+        self.franchise_name = franchise_name
+        self.batch_size = batch_size
+        self.date_interval = date_interval
 
     def write_json(self, data: list[dict[str, Union[str, int, bool]]], filename: str) -> None:
         '''
@@ -43,9 +49,7 @@ class SteamCrawler():
         with open(path, "w") as f:
             f.write(json.dumps(data))
 
-
-    
-    def generate_reviews(self) -> Generator[dict[str, Union[str, int, bool]], None, None]:
+    def generate_reviews(self) -> Generator[dict[str, Union[str, int, bool]]]:
         ''' 
         Loop through requests of all steam reviews for a specific game
 
@@ -74,7 +78,7 @@ class SteamCrawler():
             params["cursor"] = r["cursor"]
             r = requests.get(url, params).json()
 
-    def filter_data(self) -> Generator[dict[str, Union[str, int, bool]], None, None]:
+    def filter_data(self) -> Generator[dict[str, Union[str, int, bool]]]:
         '''
         Input yield from request()
 
@@ -113,18 +117,20 @@ class SteamCrawler():
 
         Format the data and append it to output
 
-        Write output to json file every 5000 reviews and then at the end
+        Write output to json file every batch_size reviews 
+        
+        Also, write leftover reviews to final json file
         '''
         out = []
         batch_number = 0
         for d in self.filter_data():
-                out.append(self.format_data(d))
-                if len(out) == self.batch_size:
-                    self.write_json(out, str(batch_number))
-                    batch_number += 1
-                    if batch_number == num_batches: 
+            out.append(self.format_data(d))
+            if len(out) == self.batch_size:
+                self.write_json(out, str(batch_number))
+                out = []
+                batch_number += 1
+                if batch_number == num_batches: 
                         break
-                    out = []
         if out:
             self.write_json(out, str(batch_number))
 
@@ -135,5 +141,5 @@ if __name__ == "__main__":
                 batch_size = 5000)
                 #date_interval=("2022-01-01","2023-01-01"))
 
-    out = crawler.crawl()
+    out = crawler.crawl(batch_number = 10)
 
