@@ -11,13 +11,13 @@ crawler = SteamCrawler(app_id = 1382330,
                 batch_size = 5000)
 ```
 
-This includes the option to change the SteamCrawler variables for a specific steam game and batch size
+This includes the option to change the SteamCrawler variables for a specific steam game and batch size\
 
 To filter between 2 dates, add the variable 
 ```
 date_interval=("2022-01-01","2023-01-01")
 ```
-This is a tuple of 2 strings, with date formats "YYYY-MM-DD"
+This is a tuple of 2 strings, with date formats "YYYY-MM-DD"\
 
 
 To run the crawler:
@@ -26,6 +26,6 @@ To run the crawler:
 crawler.crawl(batch_number = x)
 ```
 
-Where x is the maximum number of batches required. 
+Where x is the maximum number of batches required.\
 
 This will output the reviews to file "output/all" or "output/date_interval", depending on if a date filter is used.
