@@ -7,6 +7,7 @@ from typing import Optional, Union
 from collections.abc import Generator
 
 class SteamCrawler():
+
     app_id: int 
     game_name: str
     franchise_name: str
@@ -21,7 +22,7 @@ class SteamCrawler():
 
         Generate base url for get_reviews
 
-        Add option to initialise date_interval to filter the reviews (2 dates in DD-MM-YYYY format)
+        Add option to initialise date_interval to filter the reviews (2 dates in YYYY-MM-DD format)
         '''
         self.app_id = app_id
         self.game_name = game_name
@@ -38,11 +39,11 @@ class SteamCrawler():
         Add date interval to folder name if applicable
         '''
         if self.date_interval is None: 
-            folder = f"crawler/output/{self.game_name}/all"
+            folder = f"output/{self.game_name}/all"
             Path(folder).mkdir(parents=True, exist_ok=True)
             path = f"{folder}/{filename}.json"
         else: 
-            folder = f"crawler/output/{self.game_name}/{self.date_interval[0]}_{self.date_interval[1]}"
+            folder = f"output/{self.game_name}/{self.date_interval[0]}_{self.date_interval[1]}"
             Path(folder).mkdir(parents=True, exist_ok=True)
             path = f"{folder}/{filename}.json"
 
@@ -119,7 +120,7 @@ class SteamCrawler():
 
         Write output to json file every batch_size reviews 
         
-        Also, write leftover reviews to final json file
+        Write leftover reviews to final json file
         '''
         out = []
         batch_number = 0
@@ -135,11 +136,11 @@ class SteamCrawler():
             self.write_json(out, str(batch_number))
 
 if __name__ == "__main__":
-    crawler = SteamCrawler(app_id = 1382330,
-                game_name = "Persona_5_Strikers",
-                franchise_name = "ATLUS",
-                batch_size = 5000)
-                #date_interval=("2022-01-01","2023-01-01"))
+    crawler = SteamCrawler(app_id = 730,
+                game_name = "CS2",
+                franchise_name = "Valve",
+                batch_size = 5000,
+                date_interval=("2022-04-08","2025-04-15"))
 
-    out = crawler.crawl(batch_number = 10)
+    out = crawler.crawl(num_batches = 10)
 
